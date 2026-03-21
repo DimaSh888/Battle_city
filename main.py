@@ -19,7 +19,7 @@ class Enemy(GSprite):
 
 window = display.set_mode((800, 600))
 display.set_caption("Круті танчики")
-background = transform.scale(image.load("testbg.png"), (800, 600))
+background = transform.scale(image.load("background.png"), (800, 600))
 
 
 game = True
