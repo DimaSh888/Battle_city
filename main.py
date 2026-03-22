@@ -60,6 +60,7 @@ class Player(GSprite):
             elif self.direction != "DOWN" and self.direction == "LEFT":
                 self.direction = "DOWN"
                 self.image = pygame.transform.rotate(self.image, 90)
+                
         if keys[K_UP]:
             self.rect.y -= self.speed
             if self.direction == "RIGHT" and self.direction != "UP":
