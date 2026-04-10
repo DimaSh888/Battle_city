@@ -10,8 +10,6 @@ img_enemy = "enemy_tank_sprite.png"
 img_wall = "wall_sprite.png"
 img_bullet = "bullet.png"
 
-
-
 class GSprite(sprite.Sprite):
     def __init__(self, entity_img, entity_pos_x, entity_pos_y, entity_size, entity_speed):
         super().__init__()
@@ -29,9 +27,6 @@ class Player(GSprite):
     def __init__(self, entity_img, entity_pos_x, entity_pos_y, entity_size,  entity_speed):
         super().__init__(entity_img, entity_pos_x, entity_pos_y, entity_size, entity_speed)
         self.direction = "UP"
-        self.last_shot_time = 0
-        self.shoot_cooldown = 1250
-
         self.last_shot_time = 0
         self.shoot_cooldown = 1250
 
@@ -129,13 +124,6 @@ class PlayerBullet(GSprite):
         elif self.direction == "LEFT":
             self.image = pygame.transform.rotate(self.image, 180)
         
-        if self.direction == "UP":
-            self.image = pygame.transform.rotate(self.image, 90)
-        elif self.direction == "DOWN":
-            self.image = pygame.transform.rotate(self.image, 270)
-        elif self.direction == "LEFT":
-            self.image = pygame.transform.rotate(self.image, 180)
-        
 
         self.rect = self.image.get_rect(center=(entity_pos_x, entity_pos_y))
 
@@ -189,57 +177,12 @@ class EnemyBullet(GSprite):
             self.kill()
             
 
-        self.rect = self.image.get_rect(center=(entity_pos_x, entity_pos_y))
-
-    def update(self):
-        if self.direction == "UP":
-            self.rect.y -= self.speed
-        elif self.direction == "DOWN":
-            self.rect.y += self.speed
-        elif self.direction == "LEFT":
-            self.rect.x -= self.speed
-        elif self.direction == "RIGHT":
-            self.rect.x += self.speed
-
-        if pygame.sprite.spritecollide(self, walls, False):
-            self.kill()
-
-        hit_enemies = pygame.sprite.spritecollide(self, enemys_group, True)
-        if hit_enemies:
-            self.kill()
-
 
 class Enemy(GSprite):
     def __init__(self, entity_img, entity_pos_x, entity_pos_y, entity_size,  entity_speed):
         super().__init__(entity_img, entity_pos_x, entity_pos_y, entity_size, entity_speed)
         self.direction = "UP"
         self.detected = False       
-
-    def update(self):
-        if self.direction == "UP":
-            self.rect.y -= self.speed
-            if pygame.sprite.spritecollide(self, walls, False):
-                self.image = pygame.transform.rotate(self.image, 90)
-                self.direction = "LEFT"
-        if self.direction == "DOWN":
-            self.rect.y += self.speed
-            if pygame.sprite.spritecollide(self, walls, False):
-                self.image = pygame.transform.rotate(self.image, 90)
-                self.direction = "RIGHT"
-        if self.direction == "RIGHT":
-            self.rect.x += self.speed
-            if pygame.sprite.spritecollide(self, walls, False):
-                self.image = pygame.transform.rotate(self.image, 90)
-                self.direction = "UP"
-        if self.direction == "LEFT":
-            self.rect.x -= self.speed
-            if pygame.sprite.spritecollide(self, walls, False):
-                self.image = pygame.transform.rotate(self.image, 90)
-                self.direction = "DOWN"
-        
-
-
-        
 
     def update(self):
         if self.direction == "UP":
@@ -274,6 +217,7 @@ window = display.set_mode((800, 600))
 display.set_caption("Круті танчики")
 background = transform.scale(image.load("background.png"), (800, 600))
 tank_player = Player(img_player, 200, 350, 45, 3)
+player_group = pygame.sprite.GroupSingle(tank_player)
 tank_enemy1 = Enemy(img_enemy, 150, 250, 45, 2)
 tank_enemy2 = Enemy(img_enemy, 50, 500, 45, 2)
 tank_enemy3 = Enemy(img_enemy, 650, 300, 45, 2)
