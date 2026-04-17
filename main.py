@@ -9,6 +9,7 @@ img_player = "player_tank_sprite.png"
 img_enemy = "enemy_tank_sprite.png"
 img_wall = "wall_sprite.png"
 img_bullet = "bullet.png"
+img_coin = "coin.png"
 
 class GSprite(sprite.Sprite):
     def __init__(self, entity_img, entity_pos_x, entity_pos_y, entity_size, entity_speed):
@@ -87,16 +88,17 @@ class Player(GSprite):
     def collision(self, walls):
         for wall in walls:
             if self.rect.colliderect(wall.rect):
-                     
-                if self.direction == "LEFT":
-                    self.rect.x += 0
-                elif self.direction == "RIGHT":
-                    self.rect.x -= 0
+                self.rect.x = self.old_x
+                if self.rect.colliderect(wall.rect):
+                    self.rect.y = self.old_y
+
+    def collect(self, coins):
+        global coin_count
+        for coin in coins:
+            if self.rect.colliderect(coin.rect):
+                coin.kill()
+                coin_count += 1
                 
-                elif self.direction == "UP":
-                    self.rect.y += 0
-                elif self.direction == "DOWN":
-                    self.rect.y -= 0
 
     def shoot(self):
         keys = pygame.key.get_pressed()
@@ -248,14 +250,15 @@ level = [
     "0 0    0    0  0",
     "0 0 0000000 0  0",
     "0 0       0 0  0",
-    "0 000 000 0 0  0",
-    "0    0   0   0 0",
+    "0 000 000m0 0  0",
+    "0    0   0m m0 0",
     "0 0000 0 0000  0",
     "0      0       0",
     "0  0000000000  0",
     "0000000000000000"]
 
 walls = sprite.Group()
+coins = sprite.Group()
 x = 0
 y = 0
 for ent in level:
@@ -264,6 +267,9 @@ for ent in level:
         if e == "0":
             wall = GSprite(img_wall, x, y, 50, 0)
             walls.add(wall)
+        if e == "m":
+            coin = GSprite(img_coin, x, y, 50, 0)
+            coins.add(coin)
         x += 50
     y += 50
 
@@ -272,6 +278,7 @@ game = True
 clock = time.Clock()
 FPS = 60
 kill_count = 0
+coin_count = 0
 game_over = False
 
 def menu():
@@ -344,7 +351,7 @@ while game:
     player_bullet_group.update()
     enemys_bullet_group.draw(window)
     enemys_bullet_group.update()
-    enemys_group.draw(window)
+    enemys_group.draw(window)   
     for enemy in enemys_group:
         enemy.update()
         enemy.shoot()
@@ -352,6 +359,7 @@ while game:
         tank_player.movement()
         tank_player.shoot()
         tank_player.collision(walls)
+        tank_player.collect(coins)
     for enemy in enemys_group:
         enemy.detected = False
 
@@ -374,7 +382,10 @@ while game:
 
     for wall in walls:
         wall.reset()
+    for coin in coins:
+        coin.reset()
    
+    draw_text(f"Монеты: {coin_count}", 30, (255,255,255), 700, 30)
 
     display.update()
     clock.tick(FPS)
