@@ -175,7 +175,7 @@ class EnemyBullet(GSprite):
         if pygame.sprite.spritecollide(self, walls, False):
             self.kill()
 
-        hit_player = pygame.sprite.spritecollide(self, player_group, True)
+        hit_player = pygame.sprite.spritecollide(self, player_group, False)
         if hit_player:
             global game_over
             game_over = True
@@ -239,39 +239,42 @@ enemys_group = sprite.Group()
 VISION_DISTANCE = 500
 enemys_group.add(tank_enemy1, tank_enemy2, tank_enemy3)
 player_bullet_group = sprite.Group()
-player_group = pygame.sprite.Group()
-player_group.add(tank_player)
 enemys_bullet_group = sprite.Group()
-
-level = [
-    "0000000000000000",
-    "0      0       0",
-    "0 0000 0 0000  0",
-    "0 0    0    0  0",
-    "0 0 0000000 0  0",
-    "0 0       0 0  0",
-    "0 000 000m0 0  0",
-    "0    0   0m m0 0",
-    "0 0000 0 0000  0",
-    "0      0       0",
-    "0  0000000000  0",
-    "0000000000000000"]
-
 walls = sprite.Group()
 coins = sprite.Group()
-x = 0
-y = 0
-for ent in level:
+
+def create_level():
+    walls.empty()
+    coins.empty()
+
+    level = [
+        "0000000000000000",
+        "0      0       0",
+        "0 0000 0 0000  0",
+        "0 0    0    0  0",
+        "0 0 0000000 0  0",
+        "0 0       0 0  0",
+        "0 000 000m0 0  0",
+        "0    0   0m m0 0",
+        "0 0000 0 0000  0",
+        "0      0       0",
+        "0  0000000000  0",
+        "0000000000000000"]
+
+    
     x = 0
-    for e in ent:
-        if e == "0":
-            wall = GSprite(img_wall, x, y, 50, 0)
-            walls.add(wall)
-        if e == "m":
-            coin = GSprite(img_coin, x, y, 50, 0)
-            coins.add(coin)
-        x += 50
-    y += 50
+    y = 0
+    for ent in level:
+        x = 0
+        for e in ent:
+            if e == "0":
+                wall = GSprite(img_wall, x, y, 50, 0)
+                walls.add(wall)
+            if e == "m":
+                coin = GSprite(img_coin, x, y, 50, 0)
+                coins.add(coin)
+            x += 50
+        y += 50
 
 
 game = True
@@ -326,66 +329,95 @@ if menu():
 else:
     game = False
 
-while game:    
-    for e in event.get():
-        if e.type == QUIT:
+
+running = True
+
+while running:
+    if not menu():
+        break
+
+    kill_count = 0
+    coin_count = 0
+    game_over = False
+    tank_player.rect.x = 200
+    tank_player.rect.y = 350
+    player_bullet_group.empty()
+    enemys_bullet_group.empty()
+
+    create_level()
+
+    enemys_group.empty()
+    enemys_group.add(
+        Enemy(img_enemy, 150, 250, 45, 2),
+        Enemy(img_enemy, 50, 500, 45, 2),
+        Enemy(img_enemy, 650, 300, 45, 2)
+    )
+
+    game = True
+
+    while game:    
+        for e in event.get():
+            if e.type == QUIT:
+                game = False
+
+        if kill_count >= 3:
+            if coin_count == 3:
+                draw_text("ВИ ПЕРЕМОГЛИ", 80, (255, 215, 18), 400, 300)
+            else: 
+                draw_text("ВИ ПЕРЕМОГЛИ", 80, (255, 255, 255), 400, 300)
+            display.update()
+            pygame.time.delay(3000)
             game = False
+            menu()
 
-    if kill_count >= 3:
-        draw_text("ВИ ПЕРЕМОГЛИ", 80, (255, 255, 255), 400, 300)
+        if game_over:
+            draw_text("МАШИНА ЗНИЩЕНА", 80, (255, 255, 255), 400, 300)
+            display.update()
+            pygame.time.delay(3000)
+            game = False
+            menu()
+
+        window.blit(background, (0,0) )
+        window.blit(tank_player.image, tank_player.rect)
+        player_bullet_group.draw(window)
+        player_bullet_group.update()
+        enemys_bullet_group.draw(window)
+        enemys_bullet_group.update()
+        enemys_group.draw(window)   
+        for enemy in enemys_group:
+            enemy.update()
+            enemy.shoot()
+        for player in player_group:
+            tank_player.movement()
+            tank_player.shoot()
+            tank_player.collision(walls)
+            tank_player.collect(coins)
+        for enemy in enemys_group:
+            enemy.detected = False
+
+            dx = tank_player.rect.centerx - enemy.rect.centerx
+            dy = tank_player.rect.centery - enemy.rect.centery
+            distance = m.hypot(dx, dy)
+            
+
+            if distance < VISION_DISTANCE:
+                line = (enemy.rect.centerx, enemy.rect.centery, tank_player.rect.centerx, tank_player.rect.centery)
+                blocked = False
+                for wall in walls:
+                    if wall.rect.clipline(line):
+                        blocked = True
+                        break
+
+                if not blocked:
+                    enemy.detected = True
+                    
+
+        for wall in walls:
+            wall.reset()
+        for coin in coins:
+            coin.reset()
+    
+        draw_text(f"Монеты: {coin_count}", 30, (255,255,255), 700, 30)
+
         display.update()
-        pygame.time.delay(3000)
-        game = False
-        menu()
-
-    if game_over:
-        draw_text("МАШИНА ЗНИЩЕНА", 80, (255, 255, 255), 400, 300)
-        display.update()
-        pygame.time.delay(3000)
-        game = False
-        menu()
-
-    window.blit(background, (0,0) )
-    window.blit(tank_player.image, tank_player.rect)
-    player_bullet_group.draw(window)
-    player_bullet_group.update()
-    enemys_bullet_group.draw(window)
-    enemys_bullet_group.update()
-    enemys_group.draw(window)   
-    for enemy in enemys_group:
-        enemy.update()
-        enemy.shoot()
-    for player in player_group:
-        tank_player.movement()
-        tank_player.shoot()
-        tank_player.collision(walls)
-        tank_player.collect(coins)
-    for enemy in enemys_group:
-        enemy.detected = False
-
-        dx = tank_player.rect.centerx - enemy.rect.centerx
-        dy = tank_player.rect.centery - enemy.rect.centery
-        distance = m.hypot(dx, dy)
-        
-
-        if distance < VISION_DISTANCE:
-            line = (enemy.rect.centerx, enemy.rect.centery, tank_player.rect.centerx, tank_player.rect.centery)
-            blocked = False
-            for wall in walls:
-                if wall.rect.clipline(line):
-                    blocked = True
-                    break
-
-            if not blocked:
-                enemy.detected = True
-                
-
-    for wall in walls:
-        wall.reset()
-    for coin in coins:
-        coin.reset()
-   
-    draw_text(f"Монеты: {coin_count}", 30, (255,255,255), 700, 30)
-
-    display.update()
-    clock.tick(FPS)
+        clock.tick(FPS)
